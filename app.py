@@ -7,7 +7,6 @@ import mediapipe as mp
 import os
 from collections import deque
 
-# Set page configuration
 st.set_page_config(
     page_title="Sign Language Recognition",
     page_icon="✋",
@@ -15,7 +14,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
 st.markdown("""
 <style>
     .main-header { font-size: 3rem; color: #1f77b4; text-align: center; margin-bottom: 2rem; }
@@ -27,14 +25,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# App title
 st.markdown('<h1 class="main-header">✋ Perfect Sign Language Recognition</h1>', unsafe_allow_html=True)
 st.markdown('<div class="success-box"><strong>✅ Model Accuracy: 100%</strong> - Ready for real-time recognition!</div>', unsafe_allow_html=True)
 
-# Use the .keras model format
 actions = np.array(['hello', 'iloveyou', 'thanks'])
 
-# Initialize session state
+
 if 'model' not in st.session_state:
     st.session_state.model = None
 if 'mean' not in st.session_state:
@@ -50,7 +46,6 @@ if 'predictions' not in st.session_state:
 if 'current_sentence' not in st.session_state:
     st.session_state.current_sentence = []
 
-# Load model and normalization parameters
 @st.cache_resource
 def load_assets():
     try:
@@ -66,7 +61,6 @@ def load_assets():
         st.error(f"Error loading files: {e}")
         return None, None, None
 
-# Initialize MediaPipe
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
@@ -85,21 +79,19 @@ def mediapipe_detection(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     return image, results
 
-# Sidebar
+
 with st.sidebar:
     st.header("⚙️ Settings")
     
-    # UPDATED: Replaced use_container_width with width
     if st.button("🚀 Load Perfect Model", width='stretch', type="primary"):
         with st.spinner("Loading 100% accurate model..."):
             st.session_state.model, st.session_state.mean, st.session_state.std = load_assets()
             if st.session_state.model:
-                st.success("✅ Perfect model loaded!")
+                st.success(" Perfect model loaded!")
             else:
-                st.error("❌ Failed to load model")
+                st.error("Failed to load model")
     
     st.header("🎮 Controls")
-    # UPDATED: Replaced use_container_width with width
     if st.button("🎥 Start/Stop Recording", width='stretch'):
         st.session_state.is_recording = not st.session_state.is_recording
         st.session_state.sequence = []
@@ -120,7 +112,6 @@ with st.sidebar:
     
     confidence_threshold = st.slider("🎯 Confidence Threshold", 0.0, 1.0, 0.7, 0.05)
 
-# Main content
 col1, col2 = st.columns([2, 1])
 
 with col1:
@@ -133,7 +124,6 @@ with col2:
     st.header("📝 Built Sentence")
     sentence_placeholder = st.empty()
 
-# Initialize webcam
 cap = cv2.VideoCapture(0)
 
 if st.session_state.model and st.session_state.mean is not None and st.session_state.std is not None:
@@ -146,7 +136,6 @@ if st.session_state.model and st.session_state.mean is not None and st.session_s
 
             image, results = mediapipe_detection(frame, holistic)
             
-            # Draw landmarks
             if results.right_hand_landmarks:
                 mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
             if results.left_hand_landmarks:
@@ -181,7 +170,6 @@ if st.session_state.model and st.session_state.mean is not None and st.session_s
                             </div>
                             """, unsafe_allow_html=True)
             
-            # Display current sentence
             with sentence_placeholder:
                 if st.session_state.current_sentence:
                     sentence_text = " ".join(st.session_state.current_sentence)
@@ -193,7 +181,6 @@ if st.session_state.model and st.session_state.mean is not None and st.session_s
                 else:
                     st.info("Your sentence will appear here. Use 'Add to Sentence' to add words.")
             
-            # Display webcam feed 
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             webcam_placeholder.image(image_rgb, channels="RGB", width='stretch')
             
@@ -204,6 +191,5 @@ if st.session_state.model and st.session_state.mean is not None and st.session_s
 else:
     st.warning("Please load the model from the sidebar to start recognition.")
 
-# Footer
 st.markdown("---")
 st.markdown("**✨ Perfect Sign Language Recognition - 100% Accurate Model**")
