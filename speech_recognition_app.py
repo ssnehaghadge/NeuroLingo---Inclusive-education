@@ -1,42 +1,53 @@
+from flask import Flask, request, jsonify
 import speech_recognition as sr
 import os
+import io
+import pyaudio
+import numpy as np
 
-sr.AudioFile.flac_command = '/opt/homebrew/bin/flac' 
+app = Flask(__name__)
+
+# Initialize the recognizer
 r = sr.Recognizer()
 
-def transcribe_and_save():
-    print("Listening... Say 'stop recording' to end.")
-    
-    with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source)
+# Define the audio stream parameters
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1 # Mono audio is sufficient for speech recognition
+RATE = 16000 # 16kHz is a good sample rate for speech
+
+AMPLIFICATION_FACTOR = 1.5 
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe_audio():
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    try:
+        audio_file = request.files['audio']
+        audio_data = audio_file.read()
         
-        while True:
-            try:
-                audio = r.listen(source, timeout=None)
-                text = r.recognize_google(audio).lower()
-                print(f"You said: {text}")
+        # Manually process the audio data to amplify the signal
+        audio_data_np = np.frombuffer(audio_data, dtype=np.int16)
+        amplified_data_np = audio_data_np * AMPLIFICATION_FACTOR
+        amplified_data = amplified_data_np.astype(np.int16).tobytes()
 
-                if "stop recording" in text:
-                    print("Stopping recording.")
-                    break  
-                    with open("notes.txt", "a") as f:
-                    f.write(text + "\n")
-                print("Note saved.")
+        # Create an AudioData object from the amplified audio bytes
+        audio_to_transcribe = sr.AudioData(amplified_data, RATE, 2)
+        
+        text = r.recognize_google(audio_to_transcribe)
+        
+        # Save the transcribed text to a notes file on the server
+        with open("notes.txt", "a") as f:
+            f.write(text + "\n")
 
-            except sr.WaitTimeoutError:
-                continue  
-            except sr.UnknownValueError:
-                print("Could not understand audio, continuing...")
-                continue
-            except sr.RequestError as e:
-                print(f"Error; {e}")
-                break
+        return jsonify({"transcript": text})
+    except sr.UnknownValueError:
+        return jsonify({"error": "Could not understand audio"}), 500
+    except sr.RequestError as e:
+        return jsonify({"error": f"API request failed: {e}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
 
-def save_note(text):
-    notes_file = "notes.txt"
-    with open(notes_file, "a") as f:
-        f.write(text + "\n")
-    print(f"Note saved to {notes_file}")
-
-if __name__ == "__main__":
-    transcribe_and_save()
+if __name__ == '__main__':
+    app.run(debug=True)
