@@ -1,4 +1,3 @@
-# app_updated.py
 import streamlit as st
 import cv2
 import numpy as np
@@ -55,11 +54,9 @@ if 'current_sentence' not in st.session_state:
 @st.cache_resource
 def load_assets():
     try:
-        # Try to load the .keras format first
         if os.path.exists('best_model.keras'):
             model = load_model('best_model.keras')
         else:
-            # Fallback to .h5 if .keras doesn't exist
             model = load_model('best_model.h5')
         
         mean = np.load('x_mean.npy')
@@ -112,12 +109,12 @@ with st.sidebar:
     st.write(f"**Status:** {status_text}")
     
     st.header("📝 Sentence Builder")
-    # UPDATED: Replaced use_container_width with width
+    
     if st.button("➕ Add to Sentence", width='stretch'):
         if st.session_state.predictions:
             recent_pred = max(set(st.session_state.predictions), key=list(st.session_state.predictions).count)
             st.session_state.current_sentence.append(actions[recent_pred])
-    # UPDATED: Replaced use_container_width with width
+    
     if st.button("🗑️ Clear Sentence", width='stretch'):
         st.session_state.current_sentence = []
     
@@ -196,7 +193,7 @@ if st.session_state.model and st.session_state.mean is not None and st.session_s
                 else:
                     st.info("Your sentence will appear here. Use 'Add to Sentence' to add words.")
             
-            # Display webcam feed - UPDATED: Replaced use_container_width with width
+            # Display webcam feed 
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             webcam_placeholder.image(image_rgb, channels="RGB", width='stretch')
             
